@@ -1,0 +1,8 @@
+# Video processing
+moviepy
+
+# Speech-to-text
+openai-whisper
+
+# YouTube downloader
+yt-dlp
