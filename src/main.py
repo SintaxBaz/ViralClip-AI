@@ -1,34 +1,34 @@
-
+# src/main.py
 from video_downloader import VideoDownloader
 from transcriber import transcribe_video, save_transcription
-from clip_finder import build_index, search_segments
-
-vidDownloaded = True #if you want to use downloaded files for transcription
-video_path = "downloads/Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster).mp4"
+from clip_finder import ClipFinder
+from video_editor import VideoEditor
+import os
 
 if __name__ == "__main__":
-    if vidDownloaded:
-        print(f"Using downloaded video at: {video_path}")
-    else:
-        downloader = VideoDownloader()
-        url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"  # example
-        video_path = downloader.download(url)
-        print(f"Downloaded video saved at: {video_path}")
+    # ==== Step 1: Download video ====
+    downloader = VideoDownloader()
+    url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"  # test URL
+    video_path = downloader.download(url)
+    print(f"Downloaded video saved at: {video_path}")
 
-    # Transcribe the downloaded video
-    print("Transcribing video...")
-    transcription = transcribe_video(video_path)
-    output_path = video_path + "_transcription.txt"
-    save_transcription(transcription, output_path)
-    print(f"Transcription saved at: {output_path}")
+    # ==== Step 2: Transcribe video ====
+    transcription_segments = transcribe_video(video_path, model_name="base")
+    transcript_path = f"{video_path}_transcription.txt"
+    save_transcription(transcription_segments, transcript_path)
+    print(f"Transcription saved at: {transcript_path}")
 
-# Build semantic index
-texts, embeddings = build_index(transcription)
+    # ==== Step 3: Keyword search ====
+    keyword = "never"  # you could replace with user input
+    finder = ClipFinder()
+    matched_segments = finder.search_segments(transcription_segments, keyword)
+    print(f"Found {len(matched_segments)} segments for keyword '{keyword}'")
 
-# Example query
-query = "love song"   # could be user input
-results = search_segments(query, texts, embeddings, transcription)
-
-# Print results
-for r in results:
-    print(f"[{r['start']:.2f} - {r['end']:.2f}] {r['text']} (score={r['score']:.2f})")
+    # ==== Step 4: Clip extraction ====
+    editor = VideoEditor()
+    clips = editor.batch_cut_clips(
+        video_path,
+        [(seg["start"], seg["end"]) for seg in matched_segments],
+        padding=2.0
+    )
+    print("Generated clips:", clips)
