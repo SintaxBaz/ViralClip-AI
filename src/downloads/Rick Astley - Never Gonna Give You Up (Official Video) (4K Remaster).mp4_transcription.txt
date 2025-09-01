@@ -1,72 +1,76 @@
-[17.96 - 18.00]  Music
+[18.02 - 18.92]  Music
 [18.92 - 20.70]  There are no strangers to love
-[21.92 - 26.00]  You know the rules and something hard
-[26.00 - 30.00]  I've no commitments for the weekend of
-[30.78 - 34.34]  You won't get this wrong any other guy
-[34.34 - 39.02]  I just want to tell you how I'm feeling
-[40.00 - 42.00]  Gotta make you understand
-[42.60 - 44.96]  Never gonna give you up
-[44.96 - 47.02]  Never gonna let you down
-[47.02 - 49.44]  Never gonna run around it
-[49.44 - 51.12]  He's hurt you
-[51.12 - 53.14]  Never gonna make you cry
-[53.14 - 55.12]  Never gonna say goodbye
-[55.12 - 57.58]  Never gonna tell the lie
-[57.58 - 59.14]  And hurt you
-[60.30 - 64.44]  We've known each other for so long
-[64.44 - 66.58]  Your heart's been aching but
-[67.14 - 69.00]  You're too shy to say it
-[69.00 - 73.12]  It's as if we've all know what's been going on
-[73.12 - 74.96]  We know the game I'm with
-[74.96 - 77.04]  Gonna play it
-[77.88 - 80.80]  And if you ask me how I feel
-[80.80 - 84.86]  Don't tell me you're too bad to see
-[84.86 - 87.16]  Never gonna give you up
-[87.16 - 89.22]  Never gonna let you down
-[89.22 - 91.62]  Never gonna run around it
-[91.62 - 93.12]  He's hurt you
-[93.12 - 95.44]  Never gonna make you cry
-[95.44 - 96.80]  Never gonna say goodbye
-[97.42 - 99.78]  Never gonna tell the lie
-[99.78 - 101.84]  And hurt you
-[101.84 - 104.08]  Never gonna give you up
-[104.08 - 106.18]  Never gonna let you down
-[106.18 - 108.60]  Never gonna run around it
-[108.60 - 110.06]  He's hurt you
-[110.60 - 112.28]  Never gonna make you cry
-[112.28 - 114.14]  Never gonna say goodbye
-[114.14 - 116.70]  Never gonna tell the lie
-[116.70 - 118.60]  And hurt you
-[121.04 - 122.92]  Never gonna give you up
-[127.42 - 131.30]  Never gonna give you up
-[131.30 - 138.02]  Never gonna give me up
-[138.02 - 138.58]  Never gonna give me up
-[138.58 - 138.58] 
-[138.58 - 142.58]  For so long, your heart's been aching buzz
-[142.58 - 145.04]  You're just shy as to say it
-[145.04 - 148.68]  Say it's happy, both know what's been going on
-[148.68 - 152.96]  We know the game and we're gonna play it
-[152.96 - 156.84]  I just wanna tell you how I feel
-[156.84 - 160.72]  Hey, gotta make you understand
-[161.22 - 163.16]  Never gonna give you up
-[163.16 - 165.16]  Never gonna let you down
-[165.16 - 167.72]  Never gonna run around it
-[167.72 - 169.14]  You said you
-[169.68 - 171.38]  Never gonna make you cry
-[171.38 - 173.62]  Never gonna save you back
-[173.62 - 176.40]  Never gonna tell you how I'm like
-[176.40 - 177.52]  They're gonna stab you
-[177.52 - 180.10]  Never gonna give you up
-[180.10 - 182.20]  Never gonna let you down
-[182.20 - 184.58]  Never gonna run around it
-[184.58 - 186.06]  You said you
-[186.06 - 188.44]  Never gonna make you cry
-[188.44 - 190.64]  Never gonna save you back
-[190.64 - 193.34]  Never gonna tell you how I am
-[193.34 - 194.36]  They're gonna stab you
-[195.12 - 196.94]  Never gonna give you up
-[196.94 - 199.18]  I'm gonna let you down
-[199.18 - 202.58]  I'm gonna run around and do your job
-[202.58 - 205.42]  I'm gonna let you have
-[205.42 - 207.32]  I'm gonna say goodbye
-[207.32 - 209.68]  I'm gonna tell you why
+[21.98 - 26.74]  You know the rules and so do I
+[26.74 - 30.04]  I've no commitments for a weekend of
+[30.74 - 34.36]  You wouldn't get this wrong any other guy
+[34.36 - 38.54]  I just want to tell you how I feel
+[38.54 - 42.62]  I've got to make you understand
+[42.62 - 44.88]  Never going to give you up
+[44.88 - 46.98]  Never going to let you down
+[46.98 - 49.44]  Never going to run around it
+[49.44 - 50.88]  He's worth you
+[50.88 - 53.14]  Never going to make you cry
+[53.14 - 55.10]  Never going to say goodbye
+[55.10 - 57.46]  Never going to tell a lie
+[57.46 - 59.10]  And hurt you
+[60.30 - 64.42]  We've known each other for so long
+[64.42 - 66.54]  Your heart's been aching but
+[66.54 - 69.02]  You're too shy to say it
+[69.02 - 70.94]  It's as if we've all known what's been
+[70.94 - 72.88]  Go on home
+[72.88 - 74.96]  We know the game I'm with
+[74.96 - 77.18]  I'm gonna play it
+[77.18 - 80.80]  And if you ask me how I feel
+[81.84 - 83.62]  Don't tell me you're too
+[91.90 - 92.88]  I've no commitments for a weekend of
+[92.88 - 93.08]  You wouldn't get this wrong any other guy
+[93.08 - 94.06]  I just want to tell you how I feel
+[94.06 - 95.62]  I've got to make you understand
+[95.62 - 99.66]  Never going to tell a lie
+[99.66 - 101.78]  And hurt you
+[101.78 - 104.06]  Never going to give you up
+[104.06 - 105.62]  Never going to let you down
+[106.18 - 108.56]  Never going to run around it
+[108.56 - 109.62]  He's worth you
+[110.16 - 112.26]  Never going to make you cry
+[112.26 - 114.22]  Never going to say goodbye
+[114.22 - 116.26]  Never going to tell a lie
+[116.94 - 118.26]  And hurt you
+[127.58 - 129.36]  Never going to give you up
+[129.36 - 131.30]  Never going to give you up
+[132.12 - 133.26]  Never going to give
+[133.26 - 133.48]  Never going to give
+[133.48 - 134.06]  Never going to give
+[136.48 - 140.50]  We've known each other for so long
+[140.50 - 142.24]  Your heart's been aching but
+[142.24 - 142.24] 
+[142.24 - 145.02]  You're just shy to say it
+[145.02 - 147.00]  It's as if we've all known what's been
+[147.00 - 148.68]  Go on home
+[148.68 - 150.98]  We know the game I'm with
+[150.98 - 152.88]  I'm gonna play it
+[152.88 - 156.88]  I just want to tell you how I feel
+[156.88 - 160.24]  I've got to make you understand
+[160.78 - 163.16]  Never going to give you up
+[163.16 - 165.22]  Never going to let you down
+[165.22 - 167.72]  Never going to run around it
+[167.72 - 169.20]  He's worth you
+[169.20 - 171.36]  Never going to make you cry
+[171.36 - 173.40]  Never going to say goodbye
+[173.40 - 175.74]  Never going to tell a lie
+[175.74 - 177.68]  And hurt you
+[177.68 - 178.98]  Never going to give
+[178.98 - 184.24]  We've known each other for so long
+[184.24 - 186.28]  There's a problem
+[186.28 - 187.10]  We have a problem
+[187.10 - 187.60]  We have a problem
+[187.60 - 190.50]  We've known each other for so long
+[190.50 - 192.20]  There's a problem
+[192.20 - 193.28]  We have a problem
+[193.28 - 194.58]  He's worth you
+[194.58 - 195.82]  Never going to give
+[195.82 - 199.26]  I'm gonna let you down
+[199.26 - 202.82]  I'm gonna run around and visit you
+[203.52 - 204.82]  I'm gonna let you have
+[205.48 - 207.32]  I'm gonna say goodbye
+[207.32 - 209.70]  I'm gonna tell you why
