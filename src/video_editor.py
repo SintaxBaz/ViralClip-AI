@@ -8,22 +8,19 @@ class VideoEditor:
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
 
-    def cut_clip(self, video_path: str, start: float, end: float, padding: float = 2.0) -> str:
-        """
-        Cuts a video segment using FFmpeg between start and end timestamps.
-        
-        Args:
-            video_path (str): Path to the source video.
-            start (float): Start time in seconds.
-            end (float): End time in seconds.
-            padding (float): Extra seconds added before and after.
-        
-        Returns:
-            str: Path to the generated clip file.
-        """
+    def cut_clip(self, video_path: str, start: float, end: float, padding: float = 2.0, min_len: float = 15.0, max_len: float = 25.0) -> str:
+        #""" Cuts a video segment ensuring clips are between 15–25 seconds long. """
         start_time = max(0, start - padding)
         end_time = end + padding
         duration = end_time - start_time
+
+        # Enforce min/max clip length
+        if duration < min_len:
+            end_time = start_time + min_len
+            duration = min_len
+        elif duration > max_len:
+            end_time = start_time + max_len
+            duration = max_len
 
         filename = os.path.join(
             self.output_dir,
@@ -35,8 +32,9 @@ class VideoEditor:
             "-ss", str(start_time), "-t", str(duration),
             "-c:v", "libx264", "-c:a", "aac", filename
         ]
-        subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run(command, check=True)
         return filename
+
 
     def batch_cut_clips(self, video_path: str, segments: List[Tuple[float, float]], padding: float = 2.0) -> List[str]:
         """

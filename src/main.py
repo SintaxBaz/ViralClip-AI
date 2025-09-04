@@ -24,7 +24,7 @@ if __name__ == "__main__":
     print(f"Transcription saved at: {transcript_path}")
 
     # ==== Step 3: Keyword search ====
-    keyword = "never"  # you could replace with user input
+    keyword = "flamethrower"  # you could replace with user input
     finder = ClipFinder()
     matched_segments = finder.search_segments(transcription_segments, keyword)
     print(f"Found {len(matched_segments)} segments for keyword '{keyword}'")
