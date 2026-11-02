@@ -1,0 +1,110 @@
+name: CI
+
+# Runs on every push and PR. The point of this workflow is to answer, on
+# infrastructure neither of us controls, the question a local machine
+# without Docker cannot: does the image actually build and start?
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Unit + API tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Deliberately NOT `pip install -r requirements.txt`. Every suite
+      # here stubs whisper/torch/pyannote, so installing them would cost
+      # minutes for zero extra coverage. ffmpeg-integration is the
+      # exception -- it needs the real binary, which ubuntu-latest ships.
+      - name: Install test dependencies only
+        run: pip install fastapi "uvicorn[standard]" httpx python-multipart
+
+      - run: python tests/test_smoke.py
+      - run: python tests/test_api.py
+      - run: python tests/test_optional_deps.py
+      - run: python tests/test_ffmpeg_integration.py
+
+  docker:
+    name: Build and smoke-test the image
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # This is the check a machine without Docker cannot run locally:
+      # does the multi-stage build actually complete, with the real
+      # torch-CPU install and the real model download baked in?
+      - name: Build (tiny model, keeps CI fast)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: viralclip:ci
+          build-args: |
+            WHISPER_MODEL=tiny
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Start the container
+        run: |
+          docker run -d --name viralclip -p 8000:8000 viralclip:ci
+          echo "Waiting for the container to become healthy..."
+          for i in $(seq 1 30); do
+            status=$(docker inspect -f '{{.State.Health.Status}}' viralclip 2>/dev/null || echo "starting")
+            echo "  [$i/30] $status"
+            if [ "$status" = "healthy" ]; then exit 0; fi
+            if [ "$status" = "unhealthy" ]; then
+              echo "Container reported unhealthy:"; docker logs viralclip; exit 1
+            fi
+            sleep 3
+          done
+          echo "Timed out waiting for healthy status"; docker logs viralclip; exit 1
+
+      - name: Generate a tiny test video
+        # Generated here, not committed: step 1 of this project removed
+        # binary media from the repo, so CI makes its own fixture instead.
+        run: |
+          ffmpeg -y -loglevel error \
+            -f lavfi -i "testsrc=duration=3:size=160x120:rate=10" \
+            -f lavfi -i "sine=frequency=440:duration=3" \
+            -c:v libx264 -c:a aac -shortest /tmp/tiny.mp4
+          ls -la /tmp/tiny.mp4
+
+      - name: Hit the real API through the real server
+        run: |
+          curl -sf http://127.0.0.1:8000/healthz | tee /dev/stderr | grep -q '"ffmpeg": true'
+
+          job=$(curl -sf -X POST http://127.0.0.1:8000/jobs/upload \
+            -F "file=@/tmp/tiny.mp4;type=video/mp4" \
+            -F "query=test" -F "dry_run=true")
+          echo "submitted: $job"
+          id=$(echo "$job" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+
+          for i in $(seq 1 60); do
+            body=$(curl -sf "http://127.0.0.1:8000/jobs/$id")
+            status=$(echo "$body" | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
+            echo "  [$i/60] job $id: $status"
+            [ "$status" = "done" ] && { echo "$body"; exit 0; }
+            [ "$status" = "failed" ] && { echo "$body"; exit 1; }
+            sleep 2
+          done
+          echo "Job never finished"; exit 1
+
+      - name: Container logs (always, for debugging)
+        if: always()
+        run: docker logs viralclip || true
+
+      - name: Image size
+        if: always()
+        run: docker images viralclip:ci --format "{{.Repository}}:{{.Tag}}  {{.Size}}"

@@ -50,6 +50,7 @@ each one to a 15–25 second clip with a matching `.srt`.
 | `src/api/config.py` | Settings from the environment |
 | `Dockerfile` | Multi-stage build; models baked in, CPU torch |
 | `docker/preload_models.py` | Build-time weight download |
+| `.github/workflows/ci.yml` | Tests, Docker build, container smoke test |
 
 ---
 
@@ -236,6 +237,23 @@ cannot see them. `JobStore` has five methods and the API never touches its
 dict directly, so swapping in Redis or Postgres is contained. There is also
 no authentication, no rate limiting and no cleanup of old job output.
 
+## CI
+
+`.github/workflows/ci.yml` runs on every push and PR:
+
+1. **Unit + API tests** — the three fast suites, with only `fastapi` and
+   `httpx` installed (torch, whisper and pyannote are stubbed, so there is
+   no reason to pay for them here).
+2. **Docker build and smoke test** — builds the real image with
+   `WHISPER_MODEL=tiny` (fast, same multi-stage path as production), starts
+   the container, waits for `/healthz` to report healthy, uploads a
+   synthetic clip generated on the runner, and polls the job to `done`
+   through the real HTTP API.
+
+Step 2 is the one a machine without Docker installed cannot run locally —
+it is the actual proof the Dockerfile works, on infrastructure neither of
+us controls.
+
 ## Docker
 
 ```bash
@@ -344,7 +362,10 @@ model downloads and no ffmpeg:
 python tests/test_smoke.py          # clip maths, naming, SRT, CLI validation
 python tests/test_api.py            # full HTTP surface against a fake pipeline
 python tests/test_optional_deps.py  # diarization really is optional
+python tests/test_ffmpeg_integration.py  # real ffmpeg: generates a video, cuts it, checks durations
 ```
+
+`test_ffmpeg_integration.py` needs ffmpeg and skips cleanly without it.
 
 Or inside the image:
 
