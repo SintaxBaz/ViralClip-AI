@@ -17,11 +17,11 @@ yt-dlp>=2024.1.1
 # ---- Speech-to-text ----
 openai-whisper>=20231117
 
-# ---- Speaker diarization ----
-# Requires a HuggingFace token AND accepting the model terms for
-# pyannote/speaker-diarization-3.1 and pyannote/segmentation-3.0.
-# Optional at runtime: pass --no-diarize to skip it entirely.
-pyannote.audio>=3.1.0
+# ---- Speaker diarization: OPTIONAL, see requirements-diarize.txt ----
+# pyannote.audio pulls a large dependency tree and needs a HuggingFace
+# token, so it is not installed by default. The code imports it lazily and
+# falls back to a plain transcript if it is missing, so everything works
+# without it. To enable:  pip install -r requirements-diarize.txt
 
 # ---- Semantic transcript search ----
 sentence-transformers>=2.2.0

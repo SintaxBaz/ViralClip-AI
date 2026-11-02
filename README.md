@@ -48,6 +48,8 @@ each one to a 15–25 second clip with a matching `.srt`.
 | `src/api/jobs.py` | Job records and the job store |
 | `src/api/worker.py` | Bounded worker pool |
 | `src/api/config.py` | Settings from the environment |
+| `Dockerfile` | Multi-stage build; models baked in, CPU torch |
+| `docker/preload_models.py` | Build-time weight download |
 
 ---
 
@@ -94,6 +96,14 @@ Then:
 
 ```bash
 pip install -r requirements.txt
+```
+
+Speaker diarization is an optional extra and is **not** installed by the
+line above, because `pyannote.audio` pulls a large dependency tree and
+needs a HuggingFace token. Everything works without it. To add it:
+
+```bash
+pip install -r requirements-diarize.txt
 ```
 
 For CUDA, install `torch` from the
@@ -226,6 +236,71 @@ cannot see them. `JobStore` has five methods and the API never touches its
 dict directly, so swapping in Redis or Postgres is contained. There is also
 no authentication, no rate limiting and no cleanup of old job output.
 
+## Docker
+
+```bash
+docker build -t viralclip .
+docker run --rm -p 8000:8000 -v viralclip-data:/data viralclip
+```
+
+Or with compose:
+
+```bash
+docker compose up --build
+```
+
+Then <http://127.0.0.1:8000/docs>. No Python, no ffmpeg and no HuggingFace
+account needed on the host.
+
+### What the image does and why
+
+**ffmpeg is installed in the runtime stage, not just the builder.** It is a
+system binary needed at run time to cut clips, and `/healthz` returns `503`
+without it.
+
+**torch comes from PyTorch's CPU index.** The default Linux torch wheel is a
+CUDA build of roughly 2.5 GB; the CPU wheel is around 200 MB. For a GPU
+host, build with `--build-arg TORCH_INDEX=` (empty) to get the CUDA wheel
+back.
+
+**Model weights are downloaded at build time**, so they live in an image
+layer. Otherwise the first request to every replica pays for a ~240 MB
+download, and the image cannot start at all on a host without egress to
+HuggingFace.
+
+**Requirements are copied and installed before the source**, so editing a
+`.py` file does not reinstall torch — the difference between a 2-second and
+a 10-minute rebuild.
+
+**It is a multi-stage build.** Compilers and `git` stay in the builder; the
+runtime stage gets the finished venv and model cache only.
+
+**It runs as a non-root user** (uid 10001), with `/data` and the model cache
+owned by that user so job output and a differently configured model still
+work.
+
+**The server binds `0.0.0.0`.** Bound to `127.0.0.1`, a container's server
+is unreachable from the host even with `-p` published.
+
+**Diarization is excluded by default** — it roughly doubles the image and
+needs a token. Build with `--build-arg WITH_DIARIZATION=true` to include it.
+
+### Build arguments
+
+| Argument | Default | Meaning |
+|---|---|---|
+| `PYTHON_VERSION` | `3.11` | Base image tag |
+| `WHISPER_MODEL` | `base` | Model baked into the image |
+| `WITH_DIARIZATION` | `false` | Install `pyannote.audio` |
+| `TORCH_INDEX` | PyTorch CPU index | Set empty for the CUDA wheel |
+| `TORCH_VERSION` | `>=2.0.0,<3` | torch constraint |
+
+### Volumes
+
+Job output is written to `/data/jobs`, mounted as the `viralclip-data`
+volume, so finished clips survive a restart. The job *registry* does not —
+it is in process memory, so in-flight jobs are lost on restart.
+
 ## Optional: speaker diarization
 
 Diarization labels who is speaking, which makes transcript segments follow
@@ -266,8 +341,15 @@ Both suites stub the heavy imports, so they run in about a second with no
 model downloads and no ffmpeg:
 
 ```bash
-python tests/test_smoke.py   # clip maths, naming, SRT, CLI validation
-python tests/test_api.py     # full HTTP surface against a fake pipeline
+python tests/test_smoke.py          # clip maths, naming, SRT, CLI validation
+python tests/test_api.py            # full HTTP surface against a fake pipeline
+python tests/test_optional_deps.py  # diarization really is optional
+```
+
+Or inside the image:
+
+```bash
+docker run --rm viralclip python tests/test_api.py
 ```
 
 ## Known limitations

@@ -1,0 +1,49 @@
+# Build context hygiene. Without this the context includes a ~39 MB .git
+# and whatever media is sitting in output/, which is slow to upload to the
+# daemon and busts the layer cache on every unrelated change.
+
+.git
+.gitattributes
+.gitignore
+
+# Generated pipeline output and sample media
+output/
+downloads/
+clips/
+subtitles/
+src/downloads/
+src/clips/
+src/subtitles/
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.wav
+*.srt
+*_transcription.txt
+
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+
+# Secrets -- must never enter an image layer
+.env
+.env/
+*.ini
+
+# Docker's own files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
