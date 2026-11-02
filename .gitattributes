@@ -1,0 +1,13 @@
+# Normalize line endings: LF in the repository, native in the working tree.
+# Without this, a Windows checkout shows every text file as modified.
+* text=auto
+
+*.py   text eol=lf
+*.md   text eol=lf
+*.txt  text eol=lf
+*.srt  text eol=lf
+
+*.mp4 binary
+*.wav binary
+*.png binary
+*.jpg binary
