@@ -122,18 +122,24 @@ def transcribe_video(
     video_path: str,
     model_name: str = "base",
     diarize: bool = True,
+    model=None,
 ) -> list[dict]:
     """
     Transcribe a video, optionally splitting the transcript by speaker.
 
     Returns a list of {speaker, start, end, text}. `speaker` is None when
     diarization is skipped.
+
+    `model` optionally supplies an already-loaded Whisper model. A
+    long-running service passes one from its ModelRegistry so it does not
+    reload ~150 MB of weights on every request; the CLI leaves it None.
     """
     video_path = sanitize_filename(video_path)
     audio_path = video_path + ".wav"
     extract_audio(video_path, audio_path)
 
-    model = whisper.load_model(model_name)
+    if model is None:
+        model = whisper.load_model(model_name)
     result = model.transcribe(audio_path, word_timestamps=True)
 
     if not diarize:

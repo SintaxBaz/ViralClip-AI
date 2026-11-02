@@ -2,11 +2,15 @@
 from sentence_transformers import SentenceTransformer, util
 
 class ClipFinder:
-    def __init__(self, model_name="all-MiniLM-L6-v2"):
+    def __init__(self, model_name="all-MiniLM-L6-v2", embedder=None):
         """
         Initializes the semantic + keyword search engine for transcripts.
+
+        `embedder` optionally supplies an already-loaded SentenceTransformer,
+        so a long-running service can reuse one across requests instead of
+        reloading it. The CLI leaves it None.
         """
-        self.embedder = SentenceTransformer(model_name)
+        self.embedder = embedder if embedder is not None else SentenceTransformer(model_name)
         self.texts = None
         self.embeddings = None
         self.transcription_segments = None

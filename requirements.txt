@@ -26,6 +26,14 @@ pyannote.audio>=3.1.0
 # ---- Semantic transcript search ----
 sentence-transformers>=2.2.0
 
+# ---- HTTP API (src/api/) ----
+# Not needed for the CLI. Installed together for simplicity; split into
+# requirements-api.txt if you want a slimmer CLI-only install.
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+# Required by FastAPI to parse multipart/form-data, i.e. file uploads.
+python-multipart>=0.0.9
+
 # ---- Config / secrets ----
 python-dotenv>=1.0.0
 

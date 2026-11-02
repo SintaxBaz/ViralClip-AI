@@ -11,18 +11,12 @@ import argparse
 import sys
 from pathlib import Path
 
-from clip_finder import ClipFinder
-from subtitle_agent import ReelSubtitleAgent
-from transcriber import save_transcription, transcribe_video
-from video_downloader import VideoDownloader
+from pipeline import PipelineError, Stage, run_pipeline
 from video_editor import (
     DEFAULT_MAX_LEN,
     DEFAULT_MIN_LEN,
     DEFAULT_PADDING,
-    VideoEditor,
-    clip_stem,
     ffmpeg_available,
-    resolve_window,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -99,73 +93,57 @@ def main(argv: list[str] | None = None) -> int:
               file=sys.stderr)
         return 2
 
+    # Pre-flight: catch a bad path as a usage error (exit 2) before the
+    # pipeline loads any model weights. run_pipeline() checks this too, but
+    # by then we have paid for a ~150 MB Whisper load.
+    if args.file and not Path(args.file).is_file():
+        print(f"error: no such file: {args.file}", file=sys.stderr)
+        return 2
+
     out = Path(args.output_dir)
     for sub in ("downloads", "clips", "subtitles"):
         (out / sub).mkdir(parents=True, exist_ok=True)
 
-    # ---- Step 1: obtain the source video ----
-    if args.file:
-        video_path = Path(args.file)
-        if not video_path.is_file():
-            print(f"error: no such file: {video_path}", file=sys.stderr)
-            return 2
-        video_path = str(video_path)
-        print(f"[1/5] Using local file: {video_path}")
-    else:
-        print(f"[1/5] Downloading {args.url}")
-        video_path = VideoDownloader(download_path=str(out / "downloads")).download(args.url)
-        print(f"      Saved to {video_path}")
+    def report(stage: Stage, percent: int, detail: str) -> None:
+        print(f"[{percent:3d}%] {stage.value:<13} {detail}")
 
-    # ---- Step 2: transcribe ----
-    print(f"[2/5] Transcribing with Whisper '{args.model}'"
-          f"{'' if args.no_diarize else ' + speaker diarization'} ...")
-    segments = transcribe_video(video_path, model_name=args.model,
-                                diarize=not args.no_diarize)
-    if not segments:
-        print("error: transcription produced no segments.", file=sys.stderr)
+    try:
+        result = run_pipeline(
+            query=args.query,
+            url=args.url,
+            file=args.file,
+            output_dir=out,
+            top_k=args.top_k,
+            whisper_model=args.model,
+            diarize=not args.no_diarize,
+            padding=args.padding,
+            min_len=args.min_len,
+            max_len=args.max_len,
+            dry_run=args.dry_run,
+            progress=report,
+        )
+    except PipelineError as exc:
+        print(f"error: {exc}", file=sys.stderr)
         return 1
 
-    transcript_path = out / f"{Path(video_path).stem}_transcription.txt"
-    save_transcription(segments, str(transcript_path))
-    print(f"      {len(segments)} segments -> {transcript_path}")
-
-    # ---- Step 3: search ----
-    print(f"[3/5] Searching for: {args.query!r}")
-    matches = ClipFinder().search_segments(segments, args.query, top_k=args.top_k)
-    if not matches:
-        print(f"      No matches for {args.query!r}. Try a broader query.")
+    if not result.clips:
+        print(f"\nNo matches for {args.query!r}. Try a broader query.")
         return 0
-    print(f"      {len(matches)} match(es)")
 
-    # ---- Step 4: resolve windows (shared by clips and subtitles) ----
-    windows = [
-        resolve_window(m["start"], m["end"], args.padding, args.min_len, args.max_len)
-        for m in matches
-    ]
-
+    print()
     if args.dry_run:
-        print("[4/5] Dry run -- windows that would be cut:")
-        for (start, end), m in zip(windows, matches):
-            print(f"      {clip_stem(start, end):<22} "
-                  f"{start:7.2f}s -> {end:7.2f}s  score={m['score']:.3f}")
-            print(f"      {'':22} {m['text'][:70]!r}")
-        print("[5/5] Nothing written (dry run).")
+        print("Windows that would be cut:")
+        for clip in result.clips:
+            print(f"  {clip.stem:<20} {clip.start:7.2f}s -> {clip.end:7.2f}s"
+                  f"  score={clip.score:.3f}")
+            print(f"  {'':20} {clip.text[:70]!r}")
+        print("\nNothing written (dry run).")
         return 0
 
-    # ---- Step 4b: cut clips ----
-    print(f"[4/5] Cutting {len(windows)} clip(s) ...")
-    editor = VideoEditor(output_dir=str(out / "clips"))
-    clips = editor.batch_cut_clips(video_path, windows)
-    for path in clips:
-        print(f"      {path}")
-
-    # ---- Step 5: subtitles, named to match their clip ----
-    print(f"[5/5] Writing subtitles ...")
-    agent = ReelSubtitleAgent(output_dir=str(out / "subtitles"))
-    for start, end in windows:
-        agent.save_srt(segments, start, end, output_name=f"{clip_stem(start, end)}.srt")
-
-    print(f"\nDone. {len(clips)} clip(s) in {out / 'clips'}")
+    print(f"Done. {len(result.clips)} clip(s):")
+    for clip in result.clips:
+        print(f"  {clip.clip_path}")
+        print(f"  {clip.subtitle_path}")
     return 0
 
 

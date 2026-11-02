@@ -42,7 +42,12 @@ each one to a 15–25 second clip with a matching `.srt`.
 | `src/clip_finder.py` | Hybrid keyword + semantic transcript search |
 | `src/video_editor.py` | Clip boundary maths and `ffmpeg` cutting |
 | `src/subtitle_agent.py` | Per-clip `.srt` generation |
-| `src/main.py` | CLI and pipeline orchestration |
+| `src/pipeline.py` | The pipeline itself, shared by the CLI and the API |
+| `src/main.py` | CLI entry point |
+| `src/api/app.py` | FastAPI routes and app wiring |
+| `src/api/jobs.py` | Job records and the job store |
+| `src/api/worker.py` | Bounded worker pool |
+| `src/api/config.py` | Settings from the environment |
 
 ---
 
@@ -135,6 +140,92 @@ output/
   *_transcription.txt
 ```
 
+## HTTP API
+
+The CLI and the API share one pipeline implementation (`src/pipeline.py`),
+so they cannot drift.
+
+```bash
+uvicorn api.app:app --app-dir src --reload
+```
+
+Interactive docs at <http://127.0.0.1:8000/docs>.
+
+### Why it is a job queue and not just an endpoint
+
+A 40-minute video takes minutes to transcribe. Two constraints follow:
+
+1. **It cannot run inside the request.** The client, and every proxy
+   between it and the server, times out long before the work is done. So
+   `POST /jobs` validates, enqueues, and returns `202` with a job id. The
+   client polls.
+2. **It cannot run on the event loop.** `async def` does not make blocking
+   work concurrent. A synchronous Whisper call in a coroutine freezes the
+   loop and stalls every other request, including the status polls. So the
+   pipeline runs in a thread pool and the loop stays free.
+
+Concurrency defaults to **1**. Model inference keeps its weights resident
+for the whole run, so raising it multiplies peak memory rather than
+throughput — scale with replicas, not threads. Models load once at
+startup, not per request.
+
+### Endpoints
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/healthz` | Readiness; `503` if ffmpeg is missing |
+| `POST` | `/jobs` | Submit from a URL; `202` + job id |
+| `POST` | `/jobs/upload` | Submit a `multipart/form-data` upload |
+| `GET` | `/jobs` | Recent jobs, newest first |
+| `GET` | `/jobs/{id}` | Status, percent, result |
+| `GET` | `/jobs/{id}/clips` | Clip list with download URLs |
+| `GET` | `/jobs/{id}/clips/{name}` | Download one clip or `.srt` |
+
+### Example
+
+```bash
+# Submit a URL
+curl -s -X POST http://127.0.0.1:8000/jobs \
+  -H 'content-type: application/json' \
+  -d '{"url":"https://www.youtube.com/watch?v=0dyEOsmX4iA","query":"flamethrower"}'
+# -> {"id":"a1b2c3d4e5f6","status":"queued","percent":0, ...}
+
+# Or upload a file
+curl -s -X POST http://127.0.0.1:8000/jobs/upload \
+  -F file=@podcast.mp4 -F query=rockets -F top_k=3
+
+# Poll it
+curl -s http://127.0.0.1:8000/jobs/a1b2c3d4e5f6
+# -> {"status":"transcribing","percent":30,"detail":"..."}
+
+# Fetch the clips once done
+curl -s http://127.0.0.1:8000/jobs/a1b2c3d4e5f6/clips
+curl -sO http://127.0.0.1:8000/jobs/a1b2c3d4e5f6/clips/clip_11_26.mp4
+```
+
+Job status is one of `queued`, `downloading`, `transcribing`, `searching`,
+`cutting`, `subtitling`, `done`, `failed`. A pipeline failure becomes a
+`failed` job with a message — not a `500`.
+
+### Configuration
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `VIRALCLIP_OUTPUT_ROOT` | `./output/jobs` | Where job output is written |
+| `VIRALCLIP_CONCURRENCY` | `1` | Videos processed at once |
+| `VIRALCLIP_MAX_QUEUE` | `32` | Queue depth before `503` |
+| `VIRALCLIP_MAX_UPLOAD_BYTES` | `2147483648` | Upload cap (2 GiB) |
+| `VIRALCLIP_WHISPER_MODEL` | `base` | Model size used by the service |
+| `VIRALCLIP_DIARIZE` | `false` | Enable diarization (needs a token) |
+| `VIRALCLIP_WARM_MODELS` | `true` | Load models at startup |
+
+### Not yet production
+
+Jobs live in process memory, so a restart loses them and a second replica
+cannot see them. `JobStore` has five methods and the API never touches its
+dict directly, so swapping in Redis or Postgres is contained. There is also
+no authentication, no rate limiting and no cleanup of old job output.
+
 ## Optional: speaker diarization
 
 Diarization labels who is speaking, which makes transcript segments follow
@@ -169,13 +260,24 @@ To enable it:
 | Download fails on a valid URL | `pip install -U yt-dlp` — extractors break when YouTube changes |
 | Clips overlap heavily | Known limitation: matched windows are not merged yet |
 
+## Tests
+
+Both suites stub the heavy imports, so they run in about a second with no
+model downloads and no ffmpeg:
+
+```bash
+python tests/test_smoke.py   # clip maths, naming, SRT, CLI validation
+python tests/test_api.py     # full HTTP surface against a fake pipeline
+```
+
 ## Known limitations
 
 - Overlapping matches produce overlapping clips; intervals are not merged.
 - Output keeps the source aspect ratio. No 9:16 reframing yet.
 - Subtitles are written as sidecar `.srt`, not burned into the video.
-- Models reload on every invocation — fine for a CLI, not for a service.
-- Extracted `.wav` files are not cleaned up.
+- Clip selection is query-driven; there is no automatic highlight ranking.
+- API jobs are held in memory (see above).
+- Extracted `.wav` files and finished job directories are not cleaned up.
 
 ## Licence
 
