@@ -65,11 +65,29 @@ git clone https://github.com/SintaxBaz/ViralClip-AI.git
 cd ViralClip-AI
 
 python -m venv .venv
-# Windows:
-.venv\Scripts\activate
-# macOS / Linux:
-source .venv/bin/activate
+```
 
+Activate it. **Windows PowerShell:**
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+Use the `.ps1`, not bare `.venv\Scripts\activate` — that resolves to
+`activate.bat`, which PowerShell runs in a child `cmd` process that then
+exits, leaving the venv *not* activated. If PowerShell refuses with
+"running scripts is disabled on this system", allow it for this window only:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+**Windows cmd.exe:** `.venv\Scripts\activate.bat`
+**macOS / Linux:** `source .venv/bin/activate`
+
+Then:
+
+```bash
 pip install -r requirements.txt
 ```
 
@@ -145,6 +163,9 @@ To enable it:
 | `401` / `Could not download pyannote` | Token missing, or model terms not accepted — see above. Or just use `--no-diarize` |
 | `ImportError: cannot import name 'VideoFileClip' from 'moviepy'` | moviepy 1.x installed; this needs 2.x. `pip install -U "moviepy>=2.0"` |
 | `numpy.dtype size changed` | numpy 2.x ABI clash. `pip install "numpy<2"` |
+| `running scripts is disabled on this system` | PowerShell execution policy. `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` |
+| `The token '&&' is not a valid statement separator` | Windows PowerShell 5.1 has no `&&`. Run the commands on separate lines |
+| venv seems active but packages are missing | You ran `activate.bat` from PowerShell. Use `.\.venv\Scripts\Activate.ps1` |
 | Download fails on a valid URL | `pip install -U yt-dlp` — extractors break when YouTube changes |
 | Clips overlap heavily | Known limitation: matched windows are not merged yet |
 
