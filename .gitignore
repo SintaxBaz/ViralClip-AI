@@ -1,0 +1,38 @@
+# ---- Generated pipeline output ----
+# These are produced by running the tool. Never commit them.
+downloads/
+clips/
+subtitles/
+output/
+src/downloads/
+src/clips/
+src/subtitles/
+
+# Intermediate audio extracted from video
+*.wav
+*_transcription.txt
+
+# ---- Secrets ----
+.env
+.env/
+*.ini
+!setup.ini.example
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# ---- Model caches (multi-GB; never vendor these) ----
+.cache/
+whisper_models/
+
+# ---- Editors / OS ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
