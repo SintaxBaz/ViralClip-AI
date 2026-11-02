@@ -16,7 +16,11 @@ class VideoDownloader:
             ydl_opts = {
                 "outtmpl": os.path.join(self.download_path, "%(title)s.%(ext)s"),
                 "format": "mp4/best",
-                "quiet": True
+                "quiet": True,
+                "no_warnings": True,
+                # Emit ASCII filenames with no spaces, so downstream
+                # ffmpeg calls and path handling stay simple.
+                "restrictfilenames": True,
             }
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info_dict = ydl.extract_info(url, download=True)

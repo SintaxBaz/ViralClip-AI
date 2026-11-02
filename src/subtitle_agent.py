@@ -43,8 +43,6 @@ class ReelSubtitleAgent:
                     "end": adjusted_end,
                     "text": segment["text"]
                 })
-        print(clip_segments)
-        
         # Write SRT file
         with open(output_path, "w", encoding="utf-8") as f:
             for i, segment in enumerate(clip_segments, 1):
@@ -56,6 +54,5 @@ class ReelSubtitleAgent:
                 f.write(f"{start} --> {end}\n")      # Timestamp on second line
                 f.write(f"{text}\n\n")               # Text on third line, then blank line
         
-        print(f"✅ Clip subtitles saved at {output_path}")
         return output_path
 
