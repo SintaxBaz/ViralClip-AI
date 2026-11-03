@@ -91,7 +91,11 @@ jobs:
 
       - name: Hit the real API through the real server
         run: |
-          curl -sf http://127.0.0.1:8000/healthz | tee /dev/stderr | grep -q '"ffmpeg": true'
+          # Parsed, not grepped: FastAPI/Starlette emits compact JSON
+          # ("ffmpeg":true, no space), which a space-assuming grep -q
+          # pattern silently never matches.
+          curl -sf http://127.0.0.1:8000/healthz | tee /tmp/healthz.json
+          python3 -c "import json; d=json.load(open('/tmp/healthz.json')); assert d['ffmpeg'] is True, d; assert d['status'] == 'ok', d"
 
           job=$(curl -sf -X POST http://127.0.0.1:8000/jobs/upload \
             -F "file=@/tmp/tiny.mp4;type=video/mp4" \
