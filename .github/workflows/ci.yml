@@ -71,21 +71,31 @@ jobs:
           done
           echo "Timed out waiting for healthy status"; docker logs viralclip; exit 1
 
-      - name: Install ffmpeg
-        # Needed on the RUNNER (to generate the test fixture below), not
-        # inside the container -- the image bakes in its own ffmpeg.
-        # Not assumed to be on the runner image already: explicit beats
-        # implicit, and runner images change their preinstalled tools
-        # without warning.
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install ffmpeg and espeak-ng
+        # ffmpeg: needed on the RUNNER to generate the test fixture below
+        # (the image bakes in its own, separate copy for actual clip
+        # cutting). espeak-ng: a text-to-speech engine, used to give the
+        # fixture real speech -- see the next step for why that matters.
+        # Neither is assumed to pre-exist on the runner image: explicit
+        # beats implicit, since runner images change without notice.
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg espeak-ng
 
-      - name: Generate a tiny test video
+      - name: Generate a tiny test video with real speech
         # Generated here, not committed: step 1 of this project removed
         # binary media from the repo, so CI makes its own fixture instead.
+        #
+        # First attempt used a pure sine tone as the "audio". That is not
+        # speech, so Whisper correctly found zero transcribable segments
+        # and the job correctly failed with "no segments" -- the pipeline
+        # was right, the fixture was wrong. espeak-ng synthesizes actual
+        # speech instead, so this exercises real transcription rather
+        # than only the no-audio failure path.
         run: |
+          espeak-ng "Testing the viral clip pipeline in continuous integration" \
+            -w /tmp/speech.wav
           ffmpeg -y -loglevel error \
-            -f lavfi -i "testsrc=duration=3:size=160x120:rate=10" \
-            -f lavfi -i "sine=frequency=440:duration=3" \
+            -f lavfi -i "testsrc=duration=5:size=160x120:rate=10" \
+            -i /tmp/speech.wav \
             -c:v libx264 -c:a aac -shortest /tmp/tiny.mp4
           ls -la /tmp/tiny.mp4
 
