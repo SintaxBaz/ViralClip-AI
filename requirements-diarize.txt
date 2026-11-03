@@ -1,0 +1,13 @@
+# Optional: speaker diarization.
+#
+#   pip install -r requirements-diarize.txt
+#
+# Also needs a HuggingFace token in .env AND acceptance of the terms for
+# both gated models (see README.md):
+#   https://huggingface.co/pyannote/speaker-diarization-3.1
+#   https://huggingface.co/pyannote/segmentation-3.0
+#
+# Without this file installed, transcription still works -- transcriber.py
+# imports pyannote lazily and falls back to a plain Whisper transcript.
+
+pyannote.audio>=3.1.0

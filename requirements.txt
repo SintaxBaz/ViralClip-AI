@@ -1,8 +1,48 @@
-# Video processing
-moviepy
+# ViralClip-AI dependencies
+#
+# System prerequisite (NOT installable via pip):
+#   ffmpeg  -- must be on PATH. See README.md.
+#
+# Install:  pip install -r requirements.txt
 
-# Speech-to-text
-openai-whisper
+# ---- Video I/O ----
+# moviepy 2.x moved VideoFileClip to the top-level package.
+# src/transcriber.py uses `from moviepy import VideoFileClip`, which is 2.x-only.
+moviepy>=2.0.0
 
-# YouTube downloader
-yt-dlp
+# ---- Source download ----
+# Keep this current: extractors break whenever YouTube changes.
+yt-dlp>=2024.1.1
+
+# ---- Speech-to-text ----
+openai-whisper>=20231117
+
+# ---- Speaker diarization: OPTIONAL, see requirements-diarize.txt ----
+# pyannote.audio pulls a large dependency tree and needs a HuggingFace
+# token, so it is not installed by default. The code imports it lazily and
+# falls back to a plain transcript if it is missing, so everything works
+# without it. To enable:  pip install -r requirements-diarize.txt
+
+# ---- Semantic transcript search ----
+sentence-transformers>=2.2.0
+
+# ---- HTTP API (src/api/) ----
+# Not needed for the CLI. Installed together for simplicity; split into
+# requirements-api.txt if you want a slimmer CLI-only install.
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+# Required by FastAPI to parse multipart/form-data, i.e. file uploads.
+python-multipart>=0.0.9
+
+# ---- Config / secrets ----
+python-dotenv>=1.0.0
+
+# ---- Pinned transitively, listed for clarity ----
+# torch is pulled in by whisper, pyannote.audio and sentence-transformers.
+# Installed here as the default CPU build. For CUDA, install torch FIRST
+# from https://pytorch.org/get-started/locally/ then run this file.
+torch>=2.0.0
+
+# numpy 2.x is incompatible with some older whisper/torch builds.
+# If you hit "numpy.dtype size changed" or similar ABI errors, pin numpy<2.
+numpy>=1.24

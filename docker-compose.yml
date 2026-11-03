@@ -1,0 +1,48 @@
+# Local development / single-host deployment.
+#
+#   docker compose up --build        start the API on :8000
+#   docker compose logs -f           follow logs
+#   docker compose down              stop (named volume survives)
+#
+# Job output lives in the viralclip-data volume, so finished clips survive
+# a container restart. The job *registry* does not -- it is in process
+# memory, so in-flight jobs are lost on restart. See README.
+
+services:
+  api:
+    build:
+      context: .
+      args:
+        # true roughly doubles image size and needs HF_TOKEN below.
+        WITH_DIARIZATION: "false"
+        WHISPER_MODEL: "base"
+        # Set to empty to install the CUDA torch wheel instead of CPU.
+        # TORCH_INDEX: ""
+    image: viralclip:local
+    ports:
+      - "8000:8000"
+    environment:
+      VIRALCLIP_OUTPUT_ROOT: /data/jobs
+      VIRALCLIP_WHISPER_MODEL: base
+      # Keep at 1 unless the host has memory to spare: each concurrent job
+      # holds its own model weights resident for the whole run.
+      VIRALCLIP_CONCURRENCY: "1"
+      VIRALCLIP_MAX_QUEUE: "32"
+      VIRALCLIP_WARM_MODELS: "true"
+      VIRALCLIP_DIARIZE: "false"
+      # Only read when VIRALCLIP_DIARIZE is true and the image was built
+      # with WITH_DIARIZATION=true. Put the value in a .env beside this
+      # file; it is gitignored and never baked into a layer.
+      HF_TOKEN: "${HF_TOKEN:-}"
+    volumes:
+      - viralclip-data:/data
+    restart: unless-stopped
+    # Transcription is memory-hungry; without a cap a large model on a
+    # long video can take the host down rather than just the container.
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+
+volumes:
+  viralclip-data:
