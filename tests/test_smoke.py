@@ -113,5 +113,34 @@ check("min_len > max_len rejected",
 check("missing input file rejected",
       exits_with(["--file", "definitely_absent.mp4", "-q", "a", "--dry-run"], 2), True)
 
+print("\nVideoDownloader: format selector must not silently drop audio")
+import yt_dlp as _yt_dlp_stub  # the stub module installed above
+_yt_dlp_stub.YoutubeDL = type("FakeYDL", (), {
+    "__init__": lambda self, opts: setattr(self, "opts", opts),
+    "__enter__": lambda self: self,
+    "__exit__": lambda self, *a: None,
+})
+from video_downloader import VideoDownloader
+
+captured = {}
+class CapturingYDL(_yt_dlp_stub.YoutubeDL):
+    def __init__(self, opts):
+        super().__init__(opts)
+        captured["opts"] = opts
+_yt_dlp_stub.YoutubeDL = CapturingYDL
+try:
+    VideoDownloader(download_path="/tmp/vc_dl_test").download("http://example.com/v")
+except Exception:
+    pass  # extract_info isn't implemented on the fake; we only need opts
+fmt = captured.get("opts", {}).get("format", "")
+# The regression this guards: "mp4/best" picks a single mp4 stream, which
+# on many YouTube videos is video-only (audio ships separately as m4a).
+check("format requests audio+video explicitly, not a single mp4 stream",
+      fmt != "mp4/best", True)
+check("format pairs mp4 video with m4a audio",
+      "bestaudio" in fmt and "bestvideo" in fmt, True)
+check("merge_output_format set, so split streams are actually joined",
+      captured.get("opts", {}).get("merge_output_format"), "mp4")
+
 print(f"\n{passed} passed, {failed} failed")
 sys.exit(1 if failed else 0)
