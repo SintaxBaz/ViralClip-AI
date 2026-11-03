@@ -71,6 +71,14 @@ jobs:
           done
           echo "Timed out waiting for healthy status"; docker logs viralclip; exit 1
 
+      - name: Install ffmpeg
+        # Needed on the RUNNER (to generate the test fixture below), not
+        # inside the container -- the image bakes in its own ffmpeg.
+        # Not assumed to be on the runner image already: explicit beats
+        # implicit, and runner images change their preinstalled tools
+        # without warning.
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - name: Generate a tiny test video
         # Generated here, not committed: step 1 of this project removed
         # binary media from the repo, so CI makes its own fixture instead.
